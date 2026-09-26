@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dgr-hermes-example-word-report"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["dgr-hermes==0.1.0.dev0"]
+
+[project.entry-points."dgr_hermes.modules"]
+word_report = "dgr_word_report:create_module"
+
+[tool.setuptools.packages.find]
+where = ["src"]
