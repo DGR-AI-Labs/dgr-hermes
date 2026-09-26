@@ -1,4 +1,5 @@
 """Version 1 definitions for trusted, synchronous contributor modules."""
+
 from dataclasses import dataclass
 from typing import Any, Callable
 

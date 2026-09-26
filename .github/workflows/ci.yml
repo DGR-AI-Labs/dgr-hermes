@@ -36,3 +36,12 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/.hermes-test-source
         run: python3 scripts/check_hermes_integration.py
+      - name: Enforce Pylint quality floor for every first-party area
+        env:
+          PYTHONPATH: ${{ github.workspace }}/.hermes-test-source
+        run: |
+          python3 -m pip install -r tests/requirements-lint.txt
+          python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F src/dgr_hermes
+          python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F examples/word_report/src/dgr_word_report
+          python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F scripts
+          python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F tests/test_modules.py
