@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dgr-hermes"
+version = "0.1.0.dev0"
+description = "Opt-in contributor modules for Hermes Agent"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.entry-points."hermes_agent.plugins"]
+dgr_hermes = "dgr_hermes.plugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]

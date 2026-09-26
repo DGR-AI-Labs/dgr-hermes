@@ -9,3 +9,9 @@
 __pycache__/
 .venv/
 target/
+
+build/
+dist/
+*.egg-info/
+
+.hermes-test-source/
