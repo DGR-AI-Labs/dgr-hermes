@@ -45,3 +45,9 @@ jobs:
           python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F examples/word_report/src/dgr_word_report
           python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F scripts
           python3 -m pylint --persistent=no --fail-under=8.0 --fail-on=E,F tests/test_modules.py
+      - name: Check formatting and selected correctness rules
+        run: |
+          python3 -m ruff check .
+          python3 -m ruff format --check .
+      - name: Check contributor and host interface types
+        run: python3 -m pyright --warnings

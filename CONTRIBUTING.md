@@ -28,3 +28,26 @@ python scripts/check_hermes_integration.py
 
 The upstream checkout resolves host imports and supplies the integration target;
 it is not part of the first-party lint scope.
+
+Ruff and Pyright are also required in CI. After installing the pinned tools from
+`tests/requirements-lint.txt`, place the pinned Hermes checkout at
+`.hermes-test-source` (ignored by Git), then run:
+
+```sh
+python -m ruff check .
+python -m ruff format --check .
+python -m pyright --warnings
+```
+
+Ruff checks formatting, imports and selected correctness rules across first-party
+Python and stubs. Use `ruff format .` for formatting; it is the repository formatter.
+Pyright checks the package and reference module in strict mode, and scripts/tests
+in standard mode. CI rejects all reported errors and warnings. Public JSON and
+handler aliases plus the packaged `py.typed` marker let contributors check their
+own integrations. Annotations never replace input validation or make Python modules
+a sandbox. Narrow runtime-validation diagnostic exceptions are explained in source.
+
+[Partial host stubs](typings/README.md) describe only the pinned integration surface.
+Keep the real-host lifecycle test: a locally declared type signature cannot prove
+upstream compatibility. Pylint retains its separate 8.0 floor and error/fatal gate;
+none of these checks substitutes for security analysis or adversarial tests.

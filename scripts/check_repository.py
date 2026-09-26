@@ -1,8 +1,8 @@
 """Check the public repository boundary and local documentation links."""
 
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,11 +20,7 @@ PLANNING_DIRS = {"planning", "governance", "backlog"}
 
 def main():
     """Check tracked public paths and maintained documentation links."""
-    paths = (
-        subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
-        .decode()
-        .split("\0")
-    )
+    paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
     for name in filter(None, paths):
         path = Path(name)
         parts = {part.lower() for part in path.parts[:-1]}

@@ -51,3 +51,14 @@ PYTHONPATH=/path/to/hermes python scripts/check_hermes_integration.py
 ```
 
 The check creates a temporary Hermes profile, loads the installed plugin through Hermes's actual entry-point loader, dispatches both sample tools, unloads them, and reloads with an empty module list. CI runs this check against the immutable host pin. It does not start a model session or call any external provider.
+
+## Static typing
+
+The package exports `JsonValue`, `JsonObject` and `ToolHandler` alongside `Module`
+and `Tool`, and includes a `py.typed` marker. Annotate a handler as accepting
+`JsonObject` and returning `JsonValue` (or `JsonObject` for object results).
+The examples demonstrate typed factories and handlers. Mutable JSON containers are
+invariant in Python typing; annotate stored argument objects as `JsonObject` when
+passing them across the API. Runtime checks remain necessary for data from the host
+and for contributors who do not run a type checker. JSON numbers must still be
+finite, and handlers still validate their own tool-specific schema.

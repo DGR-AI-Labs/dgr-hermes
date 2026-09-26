@@ -6,8 +6,8 @@ as Hermes. Uses only temporary profile configuration and real host registration.
 
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -32,9 +32,7 @@ def main():
         from tools.registry import registry  # pylint: disable=import-outside-toplevel
 
         manager = PluginManager()
-        manifest = PluginManifest(
-            name="dgr_hermes", source="entrypoint", version="0.1.0.dev0"
-        )
+        manifest = PluginManifest(name="dgr_hermes", source="entrypoint", version="0.1.0.dev0")
         manager._load_plugin(manifest)  # pylint: disable=protected-access
         # Pinned-host integration deliberately tests its loader and ownership state.
         loaded = manager._plugins["dgr_hermes"]  # pylint: disable=protected-access
@@ -43,15 +41,11 @@ def main():
         for name in names:
             assert registry.get_entry(name, scope=manager.scope_key) is not None
         result = json.loads(
-            registry.dispatch(
-                names[0], {"text": "Hello world"}, scope=manager.scope_key
-            )
+            registry.dispatch(names[0], {"text": "Hello world"}, scope=manager.scope_key)
         )
         assert result["result"] == {"characters": 11, "words": 2, "lines": 1}, result
         result = json.loads(
-            registry.dispatch(
-                names[1], {"text": "Hello hello world"}, scope=manager.scope_key
-            )
+            registry.dispatch(names[1], {"text": "Hello hello world"}, scope=manager.scope_key)
         )
         assert result["result"] == {"unique_words": 2}, result
         assert manager.unload("dgr_hermes")

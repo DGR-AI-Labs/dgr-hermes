@@ -15,3 +15,22 @@ dgr_hermes = "dgr_hermes.plugin"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+include = ["pyproject.toml", "src/**/*.py", "examples/**/*.py", "scripts/**/*.py", "tests/**/*.py", "typings/**/*.pyi"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.pyright]
+include = ["src", "examples/word_report/src", "scripts", "tests"]
+extraPaths = ["src", "examples/word_report/src", ".hermes-test-source"]
+pythonVersion = "3.11"
+typeCheckingMode = "standard"
+strict = ["src", "examples/word_report/src"]
+stubPath = "typings"
+
+[tool.setuptools.package-data]
+dgr_hermes = ["py.typed"]
