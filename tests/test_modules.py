@@ -4,9 +4,9 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
-from dgr_hermes import Module, Tool
-from dgr_hermes.plugin import ModuleError, register
+from dgr_hermes import JsonObject, Module, Tool
 from dgr_hermes.modules.text_metrics import measure
+from dgr_hermes.plugin import ModuleError, register
 
 
 class Handle:
@@ -204,9 +204,7 @@ class ModuleTests(unittest.TestCase):
             host = Host(["external"])
             with patch(
                 "dgr_hermes.plugin.metadata.entry_points",
-                return_value=[
-                    entry("external", Module("external", (tool(handler=handler),)))
-                ],
+                return_value=[entry("external", Module("external", (tool(handler=handler),)))],
             ):
                 register(host)
             output = host.tools[0]["handler"]({"secret": "PRIVATE"})
@@ -228,16 +226,15 @@ class ModuleTests(unittest.TestCase):
 
     def test_sample_input_limits_and_unicode(self):
         """Sample input limits and unicode."""
-        self.assertEqual(
-            measure({"text": ""}), {"characters": 0, "words": 0, "lines": 0}
-        )
+        self.assertEqual(measure({"text": ""}), {"characters": 0, "words": 0, "lines": 0})
         self.assertEqual(measure({"text": "café 世界"})["characters"], 7)
-        for args in (
+        invalid_arguments: tuple[JsonObject, ...] = (
             {},
             {"text": 1},
             {"text": "a", "extra": True},
             {"text": "a" * 100001},
-        ):
+        )
+        for args in invalid_arguments:
             with self.subTest(args=str(args)[:50]), self.assertRaises(ValueError):
                 measure(args)
 

@@ -14,4 +14,6 @@ build/
 dist/
 *.egg-info/
 
-.hermes-test-source/
+
+# Pinned upstream checkout used only for integration and type resolution.
+/.hermes-test-source

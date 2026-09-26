@@ -1,7 +1,12 @@
 """Version 1 definitions for trusted, synchronous contributor modules."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import TypeAlias
+
+JsonValue: TypeAlias = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
+JsonObject: TypeAlias = dict[str, JsonValue]
+ToolHandler: TypeAlias = Callable[[JsonObject], JsonValue]
 
 API_VERSION = 1
 
@@ -16,8 +21,8 @@ class Tool:
 
     name: str
     description: str
-    parameters: dict[str, Any]
-    handler: Callable[[dict[str, Any]], Any]
+    parameters: JsonObject
+    handler: ToolHandler
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,11 @@
+# Runtime validation is required even when callers ignore public annotations.
+# pyright: reportUnnecessaryIsInstance=false
 """Separately packaged example module with no external I/O."""
 
-from dgr_hermes import Module, Tool
+from dgr_hermes import JsonObject, Module, Tool
 
 
-def report(arguments):
+def report(arguments: JsonObject) -> JsonObject:
     """Validate supplied text and count unique normalized words."""
     if not isinstance(arguments, dict) or set(arguments) != {"text"}:
         raise ValueError("Expected text")
@@ -13,7 +15,7 @@ def report(arguments):
     return {"unique_words": len(set(text.casefold().split()))}
 
 
-def create_module():
+def create_module() -> Module:
     """Declare the separately packaged example tool."""
     return Module(
         "word_report",
