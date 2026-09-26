@@ -1,4 +1,5 @@
 """Hermes adapter for explicit module selection. No decision or execution hooks."""
+
 from copy import deepcopy
 from importlib import metadata
 import inspect
@@ -18,16 +19,26 @@ class ModuleError(ValueError):
 
 
 class Registration(Protocol):
-    def dispose(self) -> None: ...
+    """Handle owned by the host registration ledger."""
+
+    def dispose(self) -> None:
+        """Release the owned registration."""
 
 
 class Host(Protocol):
-    def get_config(self, key: str, default=None): ...
-    def register_tool(self, **kwargs) -> Registration | None: ...
+    """Small subset of Hermes needed by supporting modules."""
+
+    def get_config(self, key: str, default=None):
+        """Read a plugin-relative configuration setting."""
+
+    def register_tool(self, **kwargs) -> Registration | None:
+        """Register a tool and return its host-owned cleanup handle."""
 
 
 def _selected(value):
-    if not isinstance(value, list) or any(not isinstance(n, str) or not _NAME.fullmatch(n) for n in value):
+    if not isinstance(value, list) or any(
+        not isinstance(n, str) or not _NAME.fullmatch(n) for n in value
+    ):
         raise ModuleError("enabled_modules must be a list of module names")
     if len(set(value)) != len(value):
         raise ModuleError("Duplicate enabled module")
@@ -37,14 +48,19 @@ def _selected(value):
 def _declaration(name, module):
     if not isinstance(module, Module) or module.name != name:
         raise ModuleError(f"Module factory must return Module(name={name!r})")
-    if type(module.api_version) is not int or module.api_version != API_VERSION:
+    # Require the exact wire scalar, excluding bool and custom integer subclasses.
+    if type(module.api_version) is not int or module.api_version != API_VERSION:  # pylint: disable=unidiomatic-typecheck
         raise ModuleError(f"Unsupported module API for {name}")
     if not isinstance(module.tools, tuple) or not module.tools:
         raise ModuleError(f"Module {name} must declare a nonempty tuple of tools")
     tools = []
     seen = set()
     for tool in module.tools:
-        if not isinstance(tool, Tool) or not isinstance(tool.name, str) or not _NAME.fullmatch(tool.name):
+        if (
+            not isinstance(tool, Tool)
+            or not isinstance(tool.name, str)
+            or not _NAME.fullmatch(tool.name)
+        ):
             raise ModuleError(f"Invalid tool in {name}")
         full_name = f"dgr_ext_{name}_{tool.name}"
         if full_name in seen:
@@ -52,10 +68,16 @@ def _declaration(name, module):
         seen.add(full_name)
         if not isinstance(tool.description, str) or not tool.description.strip():
             raise ModuleError(f"Missing description for {full_name}")
-        if (not callable(tool.handler) or inspect.iscoroutinefunction(tool.handler)
-                or inspect.iscoroutinefunction(getattr(tool.handler, "__call__", None))):
+        if (
+            not callable(tool.handler)
+            or inspect.iscoroutinefunction(tool.handler)
+            or inspect.iscoroutinefunction(getattr(tool.handler, "__call__", None))
+        ):
             raise ModuleError(f"Tool {full_name} requires a synchronous handler")
-        if not isinstance(tool.parameters, dict) or tool.parameters.get("type") != "object":
+        if (
+            not isinstance(tool.parameters, dict)
+            or tool.parameters.get("type") != "object"
+        ):
             raise ModuleError(f"Tool {full_name} requires an object parameter schema")
         try:
             schema = json.loads(json.dumps(tool.parameters, allow_nan=False))
@@ -76,10 +98,15 @@ def _handler(handler, module_name):
                 if inspect.iscoroutine(result):
                     result.close()
                 raise ValueError("Async result unsupported")
-            return json.dumps({"ok": True, "module": module_name, "result": result}, allow_nan=False)
-        except Exception:
-            # Do not expose exception messages, arguments or module internals to tool output.
-            return json.dumps({"ok": False, "module": module_name, "error": "module_failed"})
+            return json.dumps(
+                {"ok": True, "module": module_name, "result": result}, allow_nan=False
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            # Contain ordinary handler exceptions without exposing input or internals.
+            return json.dumps(
+                {"ok": False, "module": module_name, "error": "module_failed"}
+            )
+
     return invoke
 
 
@@ -103,13 +130,17 @@ def register(ctx: Host):
                 raise ModuleError("External module collides with bundled text_metrics")
             factories[name] = None
         elif len(matches) != 1:
-            raise ModuleError(f"Module {name} must have exactly one installed entry point")
+            raise ModuleError(
+                f"Module {name} must have exactly one installed entry point"
+            )
         else:
             factories[name] = matches[0]
     declarations = []
     for name in selected:
         if name == BUILTIN:
-            from .modules.text_metrics import create_module
+            # Import only after explicit operator enablement.
+            from .modules.text_metrics import create_module  # pylint: disable=import-outside-toplevel
+
             factory = create_module
         else:
             factory = factories[name].load()
@@ -123,10 +154,17 @@ def register(ctx: Host):
     try:
         for name, full_name, tool, parameters in declarations:
             handle = ctx.register_tool(
-                name=full_name, toolset="dgr_hermes_extensions",
-                schema={"name": full_name, "description": tool.description, "parameters": parameters},
-                handler=_handler(tool.handler, name), description=tool.description,
-                is_async=False, override=False,
+                name=full_name,
+                toolset="dgr_hermes_extensions",
+                schema={
+                    "name": full_name,
+                    "description": tool.description,
+                    "parameters": parameters,
+                },
+                handler=_handler(tool.handler, name),
+                description=tool.description,
+                is_async=False,
+                override=False,
             )
             if handle is None:
                 raise ModuleError(f"Hermes refused registration of {full_name}")
@@ -136,6 +174,7 @@ def register(ctx: Host):
         for handle in reversed(handles):
             try:
                 handle.dispose()
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
+                # Cleanup is best-effort; continue releasing the other host handles.
                 pass
         raise
